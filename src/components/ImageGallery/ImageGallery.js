@@ -15,7 +15,7 @@ const ImageGallery = ({ data }) => (
 
 export default ImageGallery;
 
-
+// 
 ImageGallery.propTypes = {
     data: PropTypes.arrayOf(
         PropTypes.shape({
