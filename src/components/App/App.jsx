@@ -6,7 +6,6 @@ import ImageGallery from "../ImageGallery/ImageGallery";
 import { Container, ErrorMessage } from './App.styled';
 import fetchImages from '../../servises/images-api';
 
-
 export const App = () => {
     const [images, setImages] = useState([]);
     const [searchWord, setSearchWord] = useState("");
@@ -20,15 +19,20 @@ useEffect(() => {
   } else {
     setStatus("LOADING");
     const newImage = fetchImages(searchWord, pageNumber);
-    console.log(newImage);
-    // newImage
-    //   .then( data  => {
-    //     const newData = data.hits.map(({ id, webformatURL, largeImageURL }) => ({ id, webformatURL, largeImageURL }));
-    //     setImages(prevImage => ([...prevImage, ...newData]));
-    //     setStatus("OK");
-    //     setPageTotal(data.totalHits);
-    //   })
-    //   .catch(() => setStatus("ERROR"))
+    try { newImage.then(data => {
+      if (data.total === 0) {
+        setStatus("ERROR")
+      } else {
+        const newData = data.hits.map(({ id, webformatURL, largeImageURL }) => ({ id, webformatURL, largeImageURL }));
+        setImages(prevState => [...prevState, ...newData]);
+        setPageTotal(data.totalHits);
+        setStatus("OK");
+      }
+    }
+    )
+    } catch (error) {
+      setStatus("ERROR")
+    } 
   }
 }, [pageNumber, searchWord]);
 

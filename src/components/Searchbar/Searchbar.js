@@ -17,9 +17,8 @@ const handleSubmit = event => {
         alert('Enter a search word.');
         return;
     }
-    console.log(keyWord);
     onSubmit(keyWord);
-    // setKeyWord("");
+    setKeyWord("");
 };
 
 return (
