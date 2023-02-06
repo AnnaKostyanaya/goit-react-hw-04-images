@@ -1,83 +1,51 @@
-import { Component } from "react";
+import { useState, useEffect } from "react";
 import Loader from "../Loader/Loader";
 import Button from "../Button/Button";
-import Searchbar from "../Searchbar/Searchbar";
+import { Searchbar}  from "../Searchbar/Searchbar";
 import ImageGallery from "../ImageGallery/ImageGallery";
 import { Container, ErrorMessage } from './App.styled';
 import fetchImages from '../../servises/images-api';
 
 
-export default class App extends Component {
-  state = {
-    images: [],
-    searchWord: "",
-    pageNumber: 1,
-    pageTotal: "",
-    status: "",
-}
+export const App = () => {
+    const [images, setImages] = useState([]);
+    const [searchWord, setSearchWord] = useState("");
+    const [pageNumber, setPageNumber] = useState(1);
+    const [pageTotal, setPageTotal] = useState(0);
+    const [status, setStatus] = useState("");
 
-componentDidUpdate(prevProps, prevState) {
-
-  const { pageNumber, searchWord } = this.state;
-  const prevWord = prevState.searchWord;
-  const nextWord = searchWord;
-  const prevPage = prevState.pageNumber;
-  const nextPage = pageNumber;
-  
-  if (prevWord !== nextWord) {
-    this.setState({status: "LOADING"});
-    const newImage = fetchImages(nextWord, pageNumber);
-    newImage
-      .then( data  => {
-        if (data.total === 0) {
-          this.setState({ status: "ERROR" })
-        } else {
-          const newData = data.hits.map(({ id, webformatURL, largeImageURL }) => ({ id, webformatURL, largeImageURL }));
-          this.setState({
-            images: newData, status: "OK", pageTotal: data.totalHits,
-          });
-        }
-      })
-      .catch(() => { this.setState({status: "ERROR"}) }) 
+useEffect(() => {
+  if (searchWord === "") {
+    return;
+  } else {
+    setStatus("LOADING");
+    const newImage = fetchImages(searchWord, pageNumber);
+    console.log(newImage);
+    // newImage
+    //   .then( data  => {
+    //     const newData = data.hits.map(({ id, webformatURL, largeImageURL }) => ({ id, webformatURL, largeImageURL }));
+    //     setImages(prevImage => ([...prevImage, ...newData]));
+    //     setStatus("OK");
+    //     setPageTotal(data.totalHits);
+    //   })
+    //   .catch(() => setStatus("ERROR"))
   }
+}, [pageNumber, searchWord]);
 
-  if (prevPage !== nextPage && prevWord === nextWord) {
-    this.setState({status: "LOADING"});
-    const newImage = fetchImages(nextWord, pageNumber);
-    newImage
-      .then( data  => {
-        const newData = data.hits.map(({ id, webformatURL, largeImageURL }) => ({ id, webformatURL, largeImageURL }));
-        this.setState(prevState => ({
-          images: [...prevState.images, ...newData], status: "OK",
-        }));
-      })
-      .catch(() => { this.setState({status: "ERROR"}) })
-    }
-}
 
-shouldComponentUpdate(nextProps, nextState) {
-  return nextState.searchWord !== this.state.searchWord ||
-        nextState.pageNumber !== this.state.pageNumber ||
-        nextState.images !== this.state.images;
-}
-
-formSubmitHandler = ({ keyWord }) => {
-  const {searchWord} = this.state;
+const formSubmitHandler = (keyWord) => {
   if (searchWord !== keyWord) {
-    this.setState({ searchWord: keyWord, pageNumber: 1, images: [] })
-    } else {
-        this.setState({ searchWord: keyWord })
+    setSearchWord(keyWord);
+    setPageNumber(1);
+    setImages([]);
     } 
 }
 
-handleIncrement = () => {
-  this.setState(prevState => (
-    { pageNumber: prevState.pageNumber + 1 }
-  ));
+const handleIncrement = () => {
+  setPageNumber(PrevNumber => PrevNumber + 1);
 }
 
-lastPageDef = () => {
-  const { pageTotal } = this.state;
+const lastPageDef = () => {
   let lastPage = Number(pageTotal % 12);
   if (lastPage === 0) {
       return lastPage = Number(pageTotal / 12);
@@ -86,35 +54,19 @@ lastPageDef = () => {
   }
 }
 
-render() {
-  const { status, searchWord, images, pageNumber } = this.state;
-  const lastPage = this.lastPageDef();
-
 return (
   <Container>
-    <Searchbar onSubmit={this.formSubmitHandler}
-    />
-    
-    {status === "OK" && (
-    <ImageGallery data={images} onClose={this.toggleModal}/>
-    )}
-
-    {status === "LOADING" && (
-      <Loader />
-    )}
-
-    {status === "ERROR" && (
-      <ErrorMessage>No images for keyword "{searchWord}"</ErrorMessage>
-    )}
-
-    {(status === "OK" && images.length > 11 && pageNumber !== lastPage) && (
-      <Button text={"Load more"} type="button" onClick={this.handleIncrement} />
-    )}
-    {(pageNumber === lastPage) && (
+    <Searchbar onSubmit={formSubmitHandler} />
+    <ImageGallery data={images} />
+    {status === "ERROR" && <ErrorMessage>No images for keyword "{searchWord}"</ErrorMessage>}
+    {status === "LOADING" &&  <Loader />}
+    {(status === "OK" && images.length > 11 && pageNumber !== lastPageDef()) &&
+      <Button text={"Load more"} type="button" onClick={handleIncrement} />}
+    {(pageNumber === lastPageDef() && pageTotal > 0) && 
       <ErrorMessage>You've reached the end of search results.</ErrorMessage>
-    )}
+    }
   </Container>
   )
-  }
+
 }
 
